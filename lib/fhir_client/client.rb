@@ -1,4 +1,5 @@
 require 'faraday'
+require 'faraday/follow_redirects'
 require 'nokogiri'
 require 'addressable/uri'
 require 'oauth2'
@@ -371,7 +372,9 @@ module FHIR
     private
 
     def faraday_connection
-      Faraday.new(proxy: proxy)
+      Faraday.new(proxy: proxy) do |con|
+        con.response :follow_redirects
+      end
     end
 
     def base_path(path)
@@ -399,8 +402,8 @@ module FHIR
           resource.to_json
         elsif format_specified.downcase == 'application/x-www-form-urlencoded'
           # Special case where this is a search body and not a resource.
-          # Leave as hash because underlying libraries automatically URL encode it.
-          resource
+          # URL-encode the hash.
+          resource.to_param
         else
           resource.to_xml
         end
